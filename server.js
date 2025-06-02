@@ -1,8 +1,11 @@
 // server.js
-const express = require('express');
-const cors = require('cors');
-const fetch = (...args) =>
-  import('node-fetch').then(({ default: fetch }) => fetch(...args));
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import fetch from 'node-fetch';
+import { modelResponse } from './controllers/modelController.js';
+
+dotenv.config();
 
 const app = express();
 const PORT = 3000;
@@ -10,15 +13,15 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json());
 
-// Handle GET requests to the root URL
+// Health check route
 app.get('/', (req, res) => {
-  res.send('✅ Server is running! Use POST /generate to interact with Ollama.');
+  res.send('✅ Server is running! Use POST /generatelocal or /generate');
 });
 
-// POST /generate
-app.post('/generate', async (req, res) => {
-  const {prompt} = req.body
-    console.log(prompt);
+// Local Ollama route
+app.post('/generatelocal', async (req, res) => {
+  const { prompt } = req.body;
+  console.log('[Local] Prompt:', prompt);
   try {
     const response = await fetch('http://localhost:11434/api/generate', {
       method: 'POST',
@@ -31,13 +34,16 @@ app.post('/generate', async (req, res) => {
     });
 
     const data = await response.json();
-    console.log(data);
+    console.log('[Local] Response:', data);
     res.json(data);
   } catch (err) {
-    console.error('❌ Error:', err);
-    res.status(500).json({ error: 'Failed to generate response' });
+    console.error('❌ Local API Error:', err);
+    res.status(500).json({ error: 'Failed to generate response from local Ollama' });
   }
 });
+
+// Remote Groq API
+app.post('/generate', modelResponse);
 
 app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
