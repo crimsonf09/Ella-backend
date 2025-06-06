@@ -6,7 +6,7 @@ const validatePrompt = (prompt) => {
 
 export const modelResponse = async (req, res) => {
   const { profile, Question, user } = req.body;
-  console.log(profile, Question, user, systemPrompt)
+  console.log(profile, Question, user)
   const prompt = `Give me the most effective prompt
 ${profile}
 Question: ${Question}
