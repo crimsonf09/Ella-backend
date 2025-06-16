@@ -1,19 +1,21 @@
 import { sendLlamaPrompt } from '../services/modelService.js';
+import fs from 'fs';
 
 const validatePrompt = (prompt) => {
-  return true; // Replace with real validation if needed
+  return true;
 };
 
 export const modelResponse = async (req, res) => {
   const { profile, Question, user } = req.body;
-  console.log(profile, Question, user)
-  const prompt = `Give me the most effective prompt
-${profile}
-Question: ${Question}
-user: ${user}`;
-const systemPrompt = "this is nong Touch na"
+  const systemPrompt = fs.readFileSync('./prompt/generalPrompt.txt', 'utf-8');
+  const prompt = `Based on the following inputs, generate an Effective Prompt as per the System Prompt guidelines:
+User Profile: ${user}
 
-  console.log("Generated prompt:\n", prompt);
+Task Context Profile: ${profile}
+
+Question: ${Question}`;
+
+  console.log("send to groq:\n", prompt);
 
   if (!validatePrompt(prompt)) {
     return res.status(400).json({ error: 'Invalid or empty prompt.' });
