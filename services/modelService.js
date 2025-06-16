@@ -15,7 +15,7 @@ export const sendLlamaPrompt = async (
     { role: 'user', content: userPrompt },
   ];
 
-  console.log('Sending messages:', messages);
+  console.log('User prompt:', userPrompt);
 
   try {
     if (stream) {

@@ -15,7 +15,6 @@ Task Context Profile: ${profile}
 
 Question: ${Question}`;
 
-  console.log("send to groq:\n", prompt);
 
   if (!validatePrompt(prompt)) {
     return res.status(400).json({ error: 'Invalid or empty prompt.' });
