@@ -1,27 +1,33 @@
-// server.js
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import mongoose from 'mongoose';
 import { modelResponse } from './controllers/modelController.js';
-
+import userRoutes from './routes/userRoutes.js'; 
+import cookieParser from 'cookie-parser';
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
 
-// Health check route
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => { console.log('✅ MongoDB connected') })
+.catch(err => console.error('❌ MongoDB connection error:', err));
+
 app.get('/', (req, res) => {
   res.send('✅ Server is running! Use POST /generatelocal or /generate');
 });
 
-// Local Ollama route
 app.post('/generatelocal', async (req, res) => {
   const { prompt } = req.body;
-  console.log('[Local] Prompt:', prompt);
   try {
     const response = await fetch('http://localhost:11434/api/generate', {
       method: 'POST',
@@ -34,16 +40,22 @@ app.post('/generatelocal', async (req, res) => {
     });
 
     const data = await response.json();
-    console.log('[Local] Response:', data);
     res.json(data);
   } catch (err) {
     console.error('❌ Local API Error:', err);
-    res.status(500).json({ error: 'Failed to generate response from local Ollama' });
+    res.status(500).json({ error: 'Failed to generate response' });
   }
 });
 
 // Remote Groq API
 app.post('/generate', modelResponse);
+
+// ✅ Now your User routes work perfectly
+app.use('/api', userRoutes);
+
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
 
 app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
