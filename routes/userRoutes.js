@@ -7,6 +7,7 @@ const router = express.Router();
 router.post('/register', userController.register);
 router.post('/login', userController.login);
 router.get('/users', protect, userController.getUsers);
+router.get('/profile',protect, userController.getProfile);
 router.delete('/delete', protect, userController.removeUser);
 router.put('/change-password', protect, userController.updatePassword);
 

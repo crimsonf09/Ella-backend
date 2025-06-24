@@ -37,8 +37,15 @@ const getUsers = async (req, res) => {
 };
 const removeUser = async (req, res) => {
     try {
-        const { email } = req.body;
-        const result = await userService.deleteUser(email);
+        const { password } = req.body;
+        const email = req.user.email;
+        console.log(email, password);
+        const result = await userService.deleteUser(email, password);
+        res.clearCookie('token', {
+            httpOnly: true,
+            sameSite: 'strict', 
+            secure: true 
+        });
         res.status(200).json({ message: 'User deleted', result });
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -54,10 +61,19 @@ const updatePassword = async (req, res) => {
         res.status(400).json({ error: err.message });
     }
 };
-
+const getProfile = async (req, res) => {
+    try {
+        const email = req.user.email;
+        const profile = await userService.getUserProfile(email);
+        res.status(200).json(profile);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+}
 export {
     register, login,
     getUsers,
     removeUser,
-    updatePassword
+    updatePassword,
+    getProfile
 };

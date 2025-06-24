@@ -46,6 +46,7 @@ const getAllUsers = async () => {
 
 // Delete User
 const deleteUser = async (email, password) => {
+    console.log(password)
     const user = await User.findOne({ email });
     if (!user) {
         throw new Error('User not found');
@@ -59,10 +60,18 @@ const deleteUser = async (email, password) => {
     const result = await User.deleteOne({ email });
     return result;
 };
+const getUserProfile = async (email) => {
+    const user = await User.find({email});
+    if(!user) {
+        throw new Error('User not found');
+    }
+    return user;
+}
 
 export {
     registerUser,
     loginUser,
     getAllUsers,
-    deleteUser
-};
+    deleteUser,
+    getUserProfile
+}
