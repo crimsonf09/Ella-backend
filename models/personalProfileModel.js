@@ -19,6 +19,7 @@ personalProfileSchema.set('toJSON', {
     transform: (doc, ret) => {
         delete ret.created;
         delete ret.lastUsed;
+        delete ret._id;
         return ret;
     }
 });
