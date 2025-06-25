@@ -1,7 +1,7 @@
-import TaskProfileModel from "../models/TaskProfileModel";
+import TaskProfileModel from '../models/taskProfileModel.js';
 import { v4 as uuidv4 } from 'uuid';
 
-const createTaskProfile = async (email, taskProfile) => {
+export const createTaskProfile = async (email, taskProfile) => {
     const { taskProfileName, content } = taskProfile;
 
     const newTaskProfile = new TaskProfileModel({
@@ -15,15 +15,15 @@ const createTaskProfile = async (email, taskProfile) => {
     });
     return await newTaskProfile.save();
 }
-const getAllTPIdByEmail = async (email) => {
+export const getAllTPIdByEmail = async (email) => {
     return await TaskProfileModel.find({ email })
         .sort({ created: -1 })
         .select('taskProfileName TPId -_id');
 }
-const getTaskProfileById = async (email, TPId) => {
+export const getTaskProfileById = async (email, TPId) => {
     return await TaskProfileModel.findOne({ TPId, email });
 }
-const updateTaskProfile = async (email, updates) => {
+export const updateTaskProfile = async (email, updates) => {
     const { TPId, taskProfileName, content } = updates;
     if (!email || !TPId || !taskProfileName || !content) {
         throw new Error('TPId, taskProfileName, content and conclusion are required');

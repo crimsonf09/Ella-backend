@@ -16,5 +16,11 @@ const taskProfileSchema = new mongoose.Schema({
     },
     share: { type: Boolean, default: false },
 });
+taskProfileSchema.set('toJSON', {
+    transform: (doc, ret) => {
+        delete ret._id;
+        return ret;
+    }
+});
 const TaskProfileModel = mongoose.model('TaskProfile', taskProfileSchema);
 export default TaskProfileModel;

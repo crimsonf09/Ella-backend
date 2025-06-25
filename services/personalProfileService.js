@@ -1,7 +1,7 @@
 import PersonalProfile from '../models/personalProfileModel.js';
 import { v4 as uuidv4 } from 'uuid';
 
-const createPersonalProfile = async (email,personalProfile) => {
+export const createPersonalProfile = async (email,personalProfile) => {
     const {personalProfileName, content} = personalProfile;
     const newPersonalProfile = new PersonalProfile({
         PPId: uuidv4(),
@@ -12,15 +12,15 @@ const createPersonalProfile = async (email,personalProfile) => {
     });
     return await newPersonalProfile.save();
 };
-const getAllPPIdByEmail = async (email) => {
+export const getAllPPIdByEmail = async (email) => {
     return await PersonalProfile.find({ email })
         .sort({ created: -1 })
         .select('personalProfileName PPId -_id');
 };
-const getPersonalProfileById = async (email, PPId) => {
+export const getPersonalProfileById = async (email, PPId) => {
     return await PersonalProfile.findOne({ PPId, email });
 };
-const updatePersonalProfile = async (email, updates) => {
+export const updatePersonalProfile = async (email, updates) => {
     const {PPId, personalProfileName, content} = updates;
     if (!email||!PPId || !personalProfileName || !content) {
         throw new Error('PPId, personalProfileName, and content are required');
@@ -44,7 +44,7 @@ const updatePersonalProfile = async (email, updates) => {
 
     return updatedProfile;
 };
-const deletePersonalProfile = async (email,PPId) => {
+export const deletePersonalProfile = async (email,PPId) => {
     const result = await PersonalProfile.deleteOne({ email,PPId });
     if (result.deletedCount === 0) {
         throw new Error('PersonalProfile not found');

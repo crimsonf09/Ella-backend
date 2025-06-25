@@ -6,6 +6,8 @@ import mongoose from 'mongoose';
 import { modelResponse } from './controllers/modelController.js';
 import userRoutes from './routes/userRoutes.js'; 
 import personalProfileRoutes from './routes/personalProfileRoute.js';
+import taskProfileRoutes from './routes/taskProfileRoute.js';
+import messageRoutes from './routes/messageRoute.js';
 import cookieParser from 'cookie-parser';
 dotenv.config();
 
@@ -54,6 +56,8 @@ app.post('/generate', modelResponse);
 // ✅ Now your User routes work perfectly
 app.use('/api', userRoutes);
 app.use('/api/personalProfile', personalProfileRoutes); 
+app.use('/api/taskProfile', taskProfileRoutes);
+app.use('/api/message', messageRoutes);
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
