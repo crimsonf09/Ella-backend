@@ -62,14 +62,26 @@ const updatePassword = async (req, res) => {
     }
 };
 const getProfile = async (req, res) => {
-    try {
-        const email = req.user.email;
-        const profile = await userService.getUserProfile(email);
-        res.status(200).json(profile);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
+  try {
+
+    console.log(req.body)
+    if (!req.user || !req.user.email) {
+      return res.status(401).json({ error: 'User not authenticated' });
     }
-}
+
+    const profile = await userService.getUserProfile(req.user.email);
+
+    if (!profile) {
+      return res.status(404).json({ error: 'User profile not found' });
+    }
+
+    res.status(200).json(profile);
+  } catch (err) {
+    console.error('Error fetching profile:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 export {
     register, login,
     getUsers,

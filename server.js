@@ -14,7 +14,17 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    if (origin) {
+      callback(null, origin); // reflect origin
+    } else {
+      callback(null, true);   // allow requests like Postman (no origin)
+    }
+  },
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(cookieParser());
 
