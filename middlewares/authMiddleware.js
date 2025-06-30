@@ -1,32 +1,20 @@
+// middlewares/authMiddleware.js
 import jwt from 'jsonwebtoken';
-
+// const jwt = require('jsonwebtoken')
 export const protect = (req, res, next) => {
-  // 1. Try reading token from cookie
-  let token = req.cookies?.token;
+  const authHeader = req.headers.authorization;
 
-  // Log for debugging
-  console.log('🔐 Token from cookie:', token);
-  console.log('🔐 Authorization header:', req.headers.authorization);
-
-  // 2. Fallback: try reading token from Authorization header
-  if (!token && req.headers.authorization?.startsWith('Bearer ')) {
-    token = req.headers.authorization.split(' ')[1];
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'Unauthorized: No token provided' });
   }
 
-  // 3. If still no token, reject the request
-  if (!token) {
-    console.warn('⛔ No token found in cookie or Authorization header');
-    return res.status(401).json({ error: 'Token missing' });
-  }
+  const token = authHeader.split(' ')[1];
 
-  // 4. Verify the token
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = { id: decoded.id, email: decoded.email };
-    console.log('✅ Token verified for user:', req.user.email);
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    req.user = decoded; // { id, username, etc. }
     next();
   } catch (err) {
-    console.error('⛔ Invalid or expired token:', err.message);
-    return res.status(401).json({ error: 'Invalid or expired token' });
+    return res.status(403).json({ message: 'Invalid or expired token' });
   }
 };

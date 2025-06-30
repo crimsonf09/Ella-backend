@@ -1,6 +1,12 @@
 import * as userService from '../services/userService.js';
-import createToken from '../utils/tokenUtils.js';
-
+import jwt from 'jsonwebtoken';
+const generateAccessToken = (user) =>{
+    console.log("accesstoken");
+    return jwt.sign(user,process.env.ACCESS_TOKEN_SECRET,{expiresIn:'30s'});
+}
+const generateRefreshToken = (user) => {
+    return jwt.sign(user,process.env.REFRESH_TOKEN_SECRET,{expiresIn:'7d'});
+}
 const register = async (req, res) => {
     try {
         console.log(req.body);
@@ -19,21 +25,33 @@ const login = async (req, res) => {
         if (!user) {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
+        const payload = {email:user.email}
+        const accessToken =generateAccessToken(payload);
+        const refreshToken = generateRefreshToken(payload);
 
-        const token = createToken(user);
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: true, // required for SameSite=None
-            sameSite: 'None', // because extension is cross-origin
-            maxAge: 1000 * 60 * 60 * 24 * 30 // 30 days
-        });
-
-        res.status(200).json({ message: 'Login successful', user });
+        res.cookie('refreshToken',refreshToken,{
+            httpOnly:true,
+            secure:true,
+            sameSite:'Strict',
+            path:'/ella/auth/refresh'
+        })
+        res.status(200).json({accessToken})
+        // res.status(200).json({ message: 'Login successful', user });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
 };
-
+const refreshToken = (req,res)=>{
+    const token = req.cookies.refreshToken
+    if(!token){
+        res.status(401);
+    }
+    jwt.verify(token,process.env.REFRESH_TOKEN_SECRET,(err,user) =>{
+        if(err) return res.status(403);
+        const accessToken = generateAccessToken({email:user.email})
+        res.json({accessToken});
+    })
+}
 const getUsers = async (req, res) => {
     try {
         const users = await userService.getAllUsers();
@@ -93,12 +111,17 @@ const getProfile = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
-
+const logout = async(req,res) =>{
+    res.clearCookie('refreshToken',{path:'/ella/auth/refresh'});
+    res.sendStatus(204)
+}
 export {
     register,
     login,
+    refreshToken,
     getUsers,
     removeUser,
     updatePassword,
-    getProfile
+    getProfile,
+    logout
 };
