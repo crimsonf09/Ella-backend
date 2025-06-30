@@ -14,19 +14,29 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(express.json());
+app.use(cookieParser());
+
+// app.use(cors({
+//   origin: 'chrome-extension://fmpgpklehfmplhdnnbmopamhkgpliibf'
+//   credentials: true
+// }));
+const allowedOrigins = [
+  'https://dacasia-chat.hakuneo.com',
+  'chrome-extension://fmpgpklehfmplhdnnbmopamhkgpliibf'
+];
+
 app.use(cors({
-  origin: (origin, callback) => {
-    if (origin) {
-      callback(null, origin); // reflect origin
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, origin);
     } else {
-      callback(null, true);   // allow requests like Postman (no origin)
+      callback(new Error('Not allowed by CORS: ' + origin));
     }
   },
   credentials: true
 }));
 
-app.use(express.json());
-app.use(cookieParser());
 
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
@@ -37,27 +47,6 @@ mongoose.connect(process.env.MONGODB_URI, {
 
 app.get('/', (req, res) => {
   res.send('✅ Server is running! Use POST /generatelocal or /generate');
-});
-
-app.post('/generatelocal', async (req, res) => {
-  const { prompt } = req.body;
-  try {
-    const response = await fetch('http://localhost:11434/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'llama3.2:3b',
-        prompt,
-        stream: false,
-      }),
-    });
-
-    const data = await response.json();
-    res.json(data);
-  } catch (err) {
-    console.error('❌ Local API Error:', err);
-    res.status(500).json({ error: 'Failed to generate response' });
-  }
 });
 
 // Remote Groq API
