@@ -1,11 +1,11 @@
 import * as userService from '../services/userService.js';
 import jwt from 'jsonwebtoken';
-const generateAccessToken = (user) =>{
+const generateAccessToken = (user) => {
     console.log("accesstoken");
-    return jwt.sign(user,process.env.ACCESS_TOKEN_SECRET,{expiresIn:'30s'});
+    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '10s' });
 }
 const generateRefreshToken = (user) => {
-    return jwt.sign(user,process.env.REFRESH_TOKEN_SECRET,{expiresIn:'7d'});
+    return jwt.sign(user, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
 }
 const register = async (req, res) => {
     try {
@@ -16,7 +16,6 @@ const register = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 };
-
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -25,33 +24,41 @@ const login = async (req, res) => {
         if (!user) {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
-        const payload = {email:user.email}
-        const accessToken =generateAccessToken(payload);
+
+        const payload = { email: user.email };
+        const accessToken = generateAccessToken(payload);
         const refreshToken = generateRefreshToken(payload);
 
-        res.cookie('refreshToken',refreshToken,{
-            httpOnly:true,
-            secure:true,
-            sameSite:'Strict',
-            path:'/ella/auth/refresh'
-        })
-        res.status(200).json({accessToken})
-        // res.status(200).json({ message: 'Login successful', user });
+        // ✅ Set tokens in custom headers
+        res.setHeader('access-token', accessToken);
+        res.setHeader('refresh-token', refreshToken);
+
+        // ✅ Optional: still return a body (for redundancy)
+        res.status(200).json({ message: 'Login successful' });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
 };
-const refreshToken = (req,res)=>{
-    const token = req.cookies.refreshToken
-    if(!token){
-        res.status(401);
+
+const refreshToken = (req, res) => {
+    const token = req.cookies.refreshToken;
+
+    console.log('refreshToken:', token);
+
+    if (!token) {
+        return res.status(401).json({ message: 'No refresh token provided' });
     }
-    jwt.verify(token,process.env.REFRESH_TOKEN_SECRET,(err,user) =>{
-        if(err) return res.status(403);
-        const accessToken = generateAccessToken({email:user.email})
-        res.json({accessToken});
-    })
-}
+
+    jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+        if (err) {
+            return res.status(403).json({ message: 'Invalid or expired refresh token' });
+        }
+        const payload = { email: user.email }
+        const accessToken = generateAccessToken({ payload });
+        return res.status(200).json({ accessToken })
+    });
+};
+
 const getUsers = async (req, res) => {
     try {
         const users = await userService.getAllUsers();
@@ -111,8 +118,8 @@ const getProfile = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
-const logout = async(req,res) =>{
-    res.clearCookie('refreshToken',{path:'/ella/auth/refresh'});
+const logout = async (req, res) => {
+    res.clearCookie('refreshToken', { path: '/auth/refresh' });
     res.sendStatus(204)
 }
 export {
