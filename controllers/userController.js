@@ -32,7 +32,7 @@ const login = async (req, res) => {
         // ✅ Set tokens in custom headers
         res.setHeader('access-token', accessToken);
         res.setHeader('refresh-token', refreshToken);
-
+        console.log(accessToken)
         // ✅ Optional: still return a body (for redundancy)
         res.status(200).json({ message: 'Login successful' });
     } catch (err) {
@@ -41,7 +41,7 @@ const login = async (req, res) => {
 };
 
 const refreshToken = (req, res) => {
-    const token = req.cookies.refreshToken;
+    const token = req.headers['refresh-token']
 
     console.log('refreshToken:', token);
 
@@ -55,7 +55,8 @@ const refreshToken = (req, res) => {
         }
         const payload = { email: user.email }
         const accessToken = generateAccessToken({ payload });
-        return res.status(200).json({ accessToken })
+        res.setHeader('access-token',accessToken)
+        return res.status(200).json({message:'access-token sent'})
     });
 };
 
