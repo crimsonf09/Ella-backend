@@ -10,6 +10,7 @@ export const createTaskProfile = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 }
+
 export const getAllTaskProfiles = async (req, res) => {
     try {
         const email = req.user.email;
@@ -19,10 +20,12 @@ export const getAllTaskProfiles = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 }
+
+// FIX: Use req.query.TPId for GET
 export const getTaskProfileById = async (req, res) => {
     try {
-        const email = req.user.email; // Get email from authenticated user
-        const { TPId } = req.body; // Get TPId from request parameters
+        const email = req.user.email;
+        const { TPId } = req.query; // <--- FIXED HERE
         const profile = await TaskProfileService.getTaskProfileById(email, TPId);
         if (!profile) {
             return res.status(404).json({ error: 'Task Profile not found' });
@@ -32,6 +35,7 @@ export const getTaskProfileById = async (req, res) => {
         res.status(400).json({ error: error.message });
     }   
 }
+
 export const updateTaskProfile = async (req, res) => {
     try {
         const email = req.user.email;
@@ -42,16 +46,18 @@ export const updateTaskProfile = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 }
+
 export const removeTaskProfile = async (req, res) => {
     try{
-        const email = req.user.email; // Get email from authenticated user
-        const { TPId } = req.body; // Get TPId from request parameters
+        const email = req.user.email;
+        const { TPId } = req.body;
         const result = await TaskProfileService.deleteTaskProfile(email, TPId);
         res.status(200).json(result);
     }catch(error){
         res.status(400).json({ error: error.message }); 
     }
 }
+
 export default {
     createTaskProfile,
     getAllTaskProfiles,
