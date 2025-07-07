@@ -2,14 +2,15 @@ import PersonalProfileService from "../services/personalProfileService.js";
 
 export const createPersonalProfile = async (req, res) => {
     try {
-        const { email } = req.user; // Get email from authenticated user
-        const personalProfile = req.body; // Get profile data from request body
+        const { email } = req.user;
+        const personalProfile = req.body;
         const newProfile = await PersonalProfileService.createPersonalProfile(email, personalProfile);
         res.status(201).json(newProfile);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
 }
+
 export const getAllPersonalProfiles = async (req, res) => {
     try {
         const email = req.user.email;
@@ -19,10 +20,12 @@ export const getAllPersonalProfiles = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 }
+
+// FIXED: Use req.query for GET
 export const getPersonalProfileById = async (req, res) => {
     try {
-        const email = req.user.email; // Get email from authenticated user
-        const { PPId } = req.body; // Get PPId from request parameters
+        const email = req.user.email;
+        const { PPId } = req.query; // <-- FIX HERE
         const profile = await PersonalProfileService.getPersonalProfileById(email, PPId);
         if (!profile) {
             return res.status(404).json({ error: 'Personal Profile not found' });
@@ -32,6 +35,7 @@ export const getPersonalProfileById = async (req, res) => {
         res.status(400).json({ error: error.message });
     }   
 }
+
 export const updatePersonalProfile = async (req, res) => {
     try {
         const email = req.user.email;
@@ -42,17 +46,19 @@ export const updatePersonalProfile = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 }
+
 export const removePersonalProfile = async (req, res) => {
     try{
-        const email = req.user.email; // Get email from authenticated user
-        const { PPId } = req.body; // Get PPId from request parameters
-        const result = await PersonalProfileService.deletePersonalProfile(email,PPId);
+        const email = req.user.email;
+        const { PPId } = req.body;
+        const result = await PersonalProfileService.deletePersonalProfile(email, PPId);
         res.status(200).json(result);
     }catch(error){
         res.status(400).json({ error: error.message }); 
     }
 }
-export default{
+
+export default {
     createPersonalProfile,
     getAllPersonalProfiles,
     getPersonalProfileById,

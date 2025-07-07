@@ -57,38 +57,62 @@ const sendMessagetoGroq = async (
         throw err;
     }
 };
-export const generatePrompt = async (email, question, PPId, TPIds, user) => {
+const generatePrompt = async (email, question, PPId, TPIds, user) => {
     let taskProfileText = "";
-    const tpIdArray = Array.isArray(TPIds) ? TPIds : [TPIds];
-    for (const TPId of tpIdArray) {
-        const taskProfile = await getTaskProfileById(email, TPId);
-        taskProfileText += `${taskProfile.taskProfileName}: ${taskProfile.content}\n`;
+
+    if (TPIds) {
+        const tpIdArray = Array.isArray(TPIds) ? TPIds : [TPIds];
+        for (const TPId of tpIdArray) {
+            if (TPId) {
+                try {
+                    const taskProfile = await getTaskProfileById(email, TPId);
+                    if (taskProfile) {
+                        taskProfileText += `${taskProfile.taskProfileName}: ${taskProfile.content}\n`;
+                    }
+                } catch (err) {
+                    console.warn(`Failed to retrieve task profile with ID ${TPId}:`, err);
+                }
+            }
+        }
     }
-    let personalProfileText = await getPersonalProfileById(email, PPId);
-    //some ai magic here
+
+    let personalProfileText = "";
+    if (PPId) {
+        try {
+            const result = await getPersonalProfileById(email, PPId);
+            if (result) {
+                personalProfileText = result;
+            }
+        } catch (err) {
+            console.warn(`Failed to retrieve personal profile with ID ${PPId}:`, err);
+        }
+    }
+
     const systemPrompt = fs.readFileSync('./prompt/generalPrompt.txt', 'utf-8');
+
     const userPrompt = `Based on the following inputs, generate an Effective Prompt as per the System Prompt guidelines:
-    User Profile: ${personalProfileText}
-    
-    Task Context Profile: ${taskProfileText}
-    
-    Question: ${question}`;
+User Profile: ${personalProfileText || 'N/A'}
+
+Task Context Profile: ${taskProfileText || 'N/A'}
+
+Question: ${question}`;
 
     const prompt = await sendMessagetoGroq(userPrompt, systemPrompt, false);
+
     const newMessage = new MessageModel({
         MId: uuidv4(),
         email,
         question,
         type: 'a',
-        PPId,
-        TPIds,
+        PPId: PPId || null,
+        TPIds: TPIds || [],
         prompt,
         model: 'lama',
         timestamp: new Date(),
     });
+
     return await newMessage.save();
-    // return prompt;
-}
+};
 export default {
     generatePrompt
 };
