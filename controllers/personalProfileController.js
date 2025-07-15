@@ -2,7 +2,7 @@ import PersonalProfileService from "../services/personalProfileService.js";
 
 export const createPersonalProfile = async (req, res) => {
     try {
-        const { email } = req.user;
+        const email = req.user.email;
         const personalProfile = req.body;
         const newProfile = await PersonalProfileService.createPersonalProfile(email, personalProfile);
         res.status(201).json(newProfile);
@@ -13,7 +13,9 @@ export const createPersonalProfile = async (req, res) => {
 
 export const getAllPersonalProfiles = async (req, res) => {
     try {
+        console.log('getAllPp')
         const email = req.user.email;
+        console.log("pprofile cont",email)
         const profiles = await PersonalProfileService.getAllPPIdByEmail(email);
         res.status(200).json(profiles);
     } catch (error) {

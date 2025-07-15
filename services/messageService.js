@@ -30,7 +30,7 @@ const sendMessagetoGroq = async (
                 stream: true,
                 messages,
             });
-
+            console.log('streamRes',streamRes)
             let fullText = '';
             for await (const chunk of streamRes) {
                 const delta = chunk.choices?.[0]?.delta?.content;
@@ -57,9 +57,27 @@ const sendMessagetoGroq = async (
         throw err;
     }
 };
+const classfication = async(question) => {
+    try{
+        const res = fetch(process.env.CLASSIFICATION_URI+'/predict',{
+            method:'POST',
+            headers:{
+                'Content-Type':'application/json'
+            },
+            body: JSON.stringify({
+                text:{question}
+            })
+        })
+        console.log(res)
+        return res
+    }catch{
+        console.warn('classfication model not response')
+    }
+}
 const generatePrompt = async (email, question, PPId, TPIds, user) => {
     let taskProfileText = "";
-
+    // const type = classfication(question)
+    console.log("this q is type: ")
     if (TPIds) {
         const tpIdArray = Array.isArray(TPIds) ? TPIds : [TPIds];
         for (const TPId of tpIdArray) {
@@ -96,7 +114,7 @@ User Profile: ${personalProfileText || 'N/A'}
 Task Context Profile: ${taskProfileText || 'N/A'}
 
 Question: ${question}`;
-
+    console.log(userPrompt)
     const prompt = await sendMessagetoGroq(userPrompt, systemPrompt, false);
 
     const newMessage = new MessageModel({

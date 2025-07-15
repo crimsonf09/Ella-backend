@@ -1,7 +1,6 @@
 import * as userService from '../services/userService.js';
 import jwt from 'jsonwebtoken';
 const generateAccessToken = (user) => {
-    console.log("accesstoken");
     return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' });
 }
 const generateRefreshToken = (user) => {
