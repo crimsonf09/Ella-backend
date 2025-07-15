@@ -30,7 +30,7 @@ const sendMessagetoGroq = async (
                 stream: true,
                 messages,
             });
-            console.log('streamRes',streamRes)
+            console.log('streamRes', streamRes)
             let fullText = '';
             for await (const chunk of streamRes) {
                 const delta = chunk.choices?.[0]?.delta?.content;
@@ -57,27 +57,28 @@ const sendMessagetoGroq = async (
         throw err;
     }
 };
-const classfication = async(question) => {
-    try{
-        const res = fetch(process.env.CLASSIFICATION_URI+'/predict',{
-            method:'POST',
-            headers:{
-                'Content-Type':'application/json'
+const classfication = async (question) => {
+    try {
+        const res = fetch(process.env.CLASSIFICATION_URI + '/predict', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                text:{question}
+                text: { question }
             })
         })
         console.log(res)
         return res
-    }catch{
+    } catch {
         console.warn('classfication model not response')
     }
 }
-const generatePrompt = async (email, question, PPId, TPIds, user) => {
+const generatePrompt = async (email, question, PPId, TPIds, role) => {
     let taskProfileText = "";
     // const type = classfication(question)
-    console.log("this q is type: ")
+    const type = "generalPrompt"
+    console.log("this q is type: ", type)
     if (TPIds) {
         const tpIdArray = Array.isArray(TPIds) ? TPIds : [TPIds];
         for (const TPId of tpIdArray) {
@@ -106,7 +107,7 @@ const generatePrompt = async (email, question, PPId, TPIds, user) => {
         }
     }
 
-    const systemPrompt = fs.readFileSync('./prompt/generalPrompt.txt', 'utf-8');
+    const systemPrompt = fs.readFileSync(`./prompt/${type}.txt`, 'utf-8');
 
     const userPrompt = `Based on the following inputs, generate an Effective Prompt as per the System Prompt guidelines:
 User Profile: ${personalProfileText || 'N/A'}

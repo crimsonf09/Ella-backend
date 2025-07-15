@@ -52,7 +52,7 @@ export const updatePersonalProfile = async (req, res) => {
 export const removePersonalProfile = async (req, res) => {
     try{
         const email = req.user.email;
-        const { PPId } = req.body;
+        const { PPId } = req.query;
         const result = await PersonalProfileService.deletePersonalProfile(email, PPId);
         res.status(200).json(result);
     }catch(error){

@@ -4,7 +4,7 @@ export const generatePrompt = async(req, res) => {
     try {
         const { PPId, TPIds,role,question } = req.body;
         console.log(req.body)
-        const email = req.user;
+        const email = req.user.email;
         console.log('email controlle;',email)
         const message = await messageService.generatePrompt(email, question,PPId, TPIds, role );
         res.status(201).json(message.prompt);

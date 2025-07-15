@@ -17,9 +17,7 @@ export const protect = (req, res, next) => {
   try {
     console.log('got access token')
     const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
-    console.log('decoded',decoded)
     req.user = decoded.payload; // e.g., { email }
-    console.log(req.user)
     if (refreshTokenHeader) {
       req.refreshToken = refreshTokenHeader;
     }

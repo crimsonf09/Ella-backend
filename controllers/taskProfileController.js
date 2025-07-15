@@ -2,7 +2,7 @@ import TaskProfileService from '../services/taskProfileService.js';
 
 export const createTaskProfile = async (req, res) => {
     try{
-        const {email} = req.user;
+        const email = req.user.email;
         const taskProfile = req.body;
         const newProfile = await TaskProfileService.createTaskProfile(email, taskProfile);
         res.status(201).json(newProfile);
