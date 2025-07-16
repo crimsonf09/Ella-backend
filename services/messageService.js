@@ -74,7 +74,7 @@ const classfication = async(question) => {
         console.warn('classfication model not response')
     }
 }
-const generatePrompt = async (email, question, PPId, TPIds, user) => {
+const generatePrompt = async (email, question, PPId, TPIds, user,type) => {
     let taskProfileText = "";
     // const type = classfication(question)
     console.log("this q is type: ")
@@ -121,15 +121,16 @@ Question: ${question}`;
         MId: uuidv4(),
         email,
         question,
-        type: 'a',
+        type,
         PPId: PPId || null,
         TPIds: TPIds || [],
         prompt,
         model: 'lama',
         timestamp: new Date(),
     });
-
-    return await newMessage.save();
+    const res = await (newMessage.save())
+    console.log(res.prompt)
+    return res;
 };
 export default {
     generatePrompt
