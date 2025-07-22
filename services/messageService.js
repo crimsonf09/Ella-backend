@@ -10,7 +10,7 @@ const groqClient = new Groq({
 
 const sendMessagetoGroq = async (
     userPrompt,
-    systemPrompt = 'You are a helpful assistant.',
+    systemPrompt,
     stream = false
 ) => {
     const messages = [
@@ -23,14 +23,14 @@ const sendMessagetoGroq = async (
     try {
         if (stream) {
             const streamRes = await groqClient.chat.completions.create({
-                model: 'meta-llama/llama-4-maverick-17b-128e-instruct',
+                model: 'meta-llama/llama-4-scout-17b-16e-instruct',
                 temperature: 1,
-                max_tokens: 1024,
+                max_tokens: 2048,
                 top_p: 1,
                 stream: true,
                 messages,
             });
-            console.log('streamRes',streamRes)
+            console.log('streamRes', streamRes)
             let fullText = '';
             for await (const chunk of streamRes) {
                 const delta = chunk.choices?.[0]?.delta?.content;
@@ -57,64 +57,88 @@ const sendMessagetoGroq = async (
         throw err;
     }
 };
-const classfication = async(question) => {
-    try{
-        const res = fetch(process.env.CLASSIFICATION_URI+'/predict',{
-            method:'POST',
-            headers:{
-                'Content-Type':'application/json'
+const classfication = async (question) => {
+    try {
+        const res = fetch(process.env.CLASSIFICATION_URI + '/predict', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                text:{question}
+                text: { question }
             })
         })
         console.log(res)
         return res
-    }catch{
+    } catch {
         console.warn('classfication model not response')
     }
 }
-const generatePrompt = async (email, question, PPId, TPIds, user,type) => {
-    let taskProfileText = "";
-    // const type = classfication(question)
-    console.log("this q is type: ")
-    if (TPIds) {
-        const tpIdArray = Array.isArray(TPIds) ? TPIds : [TPIds];
-        for (const TPId of tpIdArray) {
-            if (TPId) {
-                try {
-                    const taskProfile = await getTaskProfileById(email, TPId);
-                    if (taskProfile) {
-                        taskProfileText += `${taskProfile.taskProfileName}: ${taskProfile.content}\n`;
+const generatePrompt = async (email, question, PPId, TPIds, user, type) => {
+    let systemPrompt = '';
+    let userPrompt = '';
+    if (type === 'Rewrite & Correct Mode') {
+        systemPrompt = fs.readFileSync('./prompt/green.txt', 'utf-8');
+        userPrompt = question;
+    } else if (type === 'Contextual Expansion Mode') {
+        let taskProfileText = "";
+        // const type = classfication(question)
+
+        console.log("this q is type: ")
+        if (TPIds) {
+            const tpIdArray = Array.isArray(TPIds) ? TPIds : [TPIds];
+            for (const TPId of tpIdArray) {
+                if (TPId) {
+                    try {
+                        const taskProfile = await getTaskProfileById(email, TPId);
+                        if (taskProfile) {
+                            taskProfileText += `${taskProfile.taskProfileName}: ${taskProfile.content}\n`;
+                        }
+                    } catch (err) {
+                        console.warn(`Failed to retrieve task profile with ID ${TPId}:`, err);
                     }
-                } catch (err) {
-                    console.warn(`Failed to retrieve task profile with ID ${TPId}:`, err);
                 }
             }
         }
-    }
 
-    let personalProfileText = "";
-    if (PPId) {
-        try {
-            const result = await getPersonalProfileById(email, PPId);
-            if (result) {
-                personalProfileText = result;
+        let personalProfileText = "";
+        if (PPId) {
+            try {
+                const result = await getPersonalProfileById(email, PPId);
+                if (result) {
+                    personalProfileText = result;
+                }
+            } catch (err) {
+                console.warn(`Failed to retrieve personal profile with ID ${PPId}:`, err);
             }
-        } catch (err) {
-            console.warn(`Failed to retrieve personal profile with ID ${PPId}:`, err);
         }
-    }
 
-    const systemPrompt = fs.readFileSync('./prompt/generalPrompt.txt', 'utf-8');
+        systemPrompt = fs.readFileSync('./prompt/blue/research_insight.txt', 'utf-8');
 
-    const userPrompt = `Based on the following inputs, generate an Effective Prompt as per the System Prompt guidelines:
+        userPrompt = `
 User Profile: ${personalProfileText || 'N/A'}
 
 Task Context Profile: ${taskProfileText || 'N/A'}
 
 Question: ${question}`;
-    console.log(userPrompt)
+        console.log(userPrompt)
+    }else if(type==="Full Prompt Generator Mode"){
+        console.log('full prompt mode')
+    }
+
+// type = [
+//     "research_insight",
+//     "strategy_planning",
+//     "goal_breakdown",
+//     "creative_idea_generation",
+//     "judgment_decision",
+//     "judgment_hr_decision",
+//     "idea_validation",
+//     "paraphrase",
+//     "candidate_screening"
+// ]
+
+
     const prompt = await sendMessagetoGroq(userPrompt, systemPrompt, false);
 
     const newMessage = new MessageModel({
