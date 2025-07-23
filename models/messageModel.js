@@ -11,6 +11,7 @@ const messageSchema = new mongoose.Schema({
     },
     question:{ type: String, required: true },
     type: { type: String, required: true },
+    classification: { type: String, required: true },
     prompt: { type: String, required: true },
     model:{ type: String, required: true },
 });
