@@ -74,7 +74,7 @@ const classfication = async (question) => {
         console.warn('classfication model not response')
     }
 }
-const generatePrompt = async (email, question, PPId, TPIds, user, type) => {
+const generatePrompt = async (email, question, PPId, TPIds, user, type, messageClass) => {
     let systemPrompt = '';
     let userPrompt = '';
     if (type === 'Rewrite & Correct Mode') {
@@ -82,7 +82,11 @@ const generatePrompt = async (email, question, PPId, TPIds, user, type) => {
         userPrompt = question;
     } else if (type === 'Contextual Expansion Mode') {
         let taskProfileText = "";
-        // const type = classfication(question)
+        if(messageClass === 'auto'){
+            // messageClass = classfication(question)
+            console.log('auto classification')
+        }
+        // const messageClass = classfication(question)
 
         console.log("this q is type: ")
         if (TPIds) {
@@ -146,6 +150,7 @@ Question: ${question}`;
         email,
         question,
         type,
+        classification: messageClass,
         PPId: PPId || null,
         TPIds: TPIds || [],
         prompt,
