@@ -1,0 +1,9 @@
+For candidate screening questions:
+
+Make the question clear and specific about candidate fit, qualifications, or experience.
+
+Use task/user profile to clarify the role or expectations if helpful.
+
+Ensure the question helps assess relevant traits or skills.
+
+do no include anything more than prompt.

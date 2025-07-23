@@ -1,0 +1,9 @@
+Guidelines:
+
+Keep the original meaning and length.
+
+Use the same language — do not translate.
+
+Make only clarity and fluency improvements.
+
+Return only the revised sentence.
