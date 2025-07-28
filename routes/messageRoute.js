@@ -5,5 +5,5 @@ import { protect } from '../middlewares/authMiddleware.js';
 const router = express.Router();
 
 router.post('/generatePrompt',protect, MessageController.generatePrompt);
-
+router.post('/promptSuggestion', protect, MessageController.generatePromptSuggestion);
 export default router;
