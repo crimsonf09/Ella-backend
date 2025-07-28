@@ -9,6 +9,47 @@ const groqClient = new Groq({
     apiKey: process.env.GROQ_API_KEY
 });
 
+export const getUserAndTaskProfileTexts = async (email, PPId, TPIds) => {
+    let personalProfileText = '';
+    let taskProfileText = '';
+
+    // Get personal profile
+    if (PPId) {
+        try {
+            const result = await getPersonalProfileById(email, PPId);
+            if (result) {
+                personalProfileText = result;
+            } else {
+                console.warn('Personal profile returned null/undefined');
+            }
+        } catch (err) {
+            console.error(`Failed to retrieve personal profile ${PPId}:`, err.message);
+        }
+    }
+
+    // Get task profiles
+    if (TPIds) {
+        const tpIdArray = Array.isArray(TPIds) ? TPIds : [TPIds];
+
+        for (const TPId of tpIdArray) {
+            if (TPId) {
+                try {
+                    const taskProfile = await getTaskProfileById(email, TPId);
+                    if (taskProfile) {
+                        taskProfileText += `${taskProfile.taskProfileName}: ${taskProfile.content}\n`;
+                    } else {
+                        console.warn(`Task profile ${TPId} returned null/undefined`);
+                    }
+                } catch (err) {
+                    console.error(`Failed to retrieve task profile ${TPId}:`, err.message);
+                }
+            }
+        }
+    }
+
+    return { personalProfileText, taskProfileText };
+};
+
 const sendMessagetoGroq = async (
     userPrompt,
     systemPrompt,
@@ -32,7 +73,7 @@ const sendMessagetoGroq = async (
                 stream: true,
                 messages,
             });
-            
+
             console.log('Groq stream response received');
             let fullText = '';
             for await (const chunk of streamRes) {
@@ -68,7 +109,7 @@ const sendMessagetoGroq = async (
 const classification = async (question) => {
     try {
         console.log('Starting classification for question:', question);
-        
+
         const res = await fetch(process.env.CLASSIFICATION_URI + '/predict', {
             method: 'POST',
             headers: {
@@ -80,17 +121,17 @@ const classification = async (question) => {
         });
 
         console.log('Classification API response status:', res.status);
-        
+
         if (!res.ok) {
             throw new Error(`Classification API error: ${res.status} ${res.statusText}`);
         }
-        
+
         const data = await res.json();
         console.log('Classification response data:', JSON.stringify(data, null, 2));
-        
+
         const classLabels = [
             "research_insight",
-            "strategy_planning", 
+            "strategy_planning",
             "goal_breakdown",
             "creative_idea_generation",
             "judgment_decision",
@@ -101,34 +142,32 @@ const classification = async (question) => {
         ];
 
         const predArray = data.predicted_array;
-        
+
         if (!Array.isArray(predArray)) {
             throw new Error('Invalid response: predicted_array is not an array');
         }
-        
+
         let classLabel = 'general';
         let maxProb = 0;
-        
+
         console.log('Prediction array:', predArray);
-        
+
         for (let i = 0; i < predArray.length; i++) {
             if (predArray[i] > maxProb && predArray[i] > 0.15) {
                 maxProb = predArray[i];
                 classLabel = classLabels[i];
             }
         }
-        
+
         console.log(`Classification result: ${classLabel} (confidence: ${maxProb.toFixed(3)})`);
         return classLabel;
-        
+
     } catch (error) {
         console.error('Classification error:', error.message);
         console.warn('Using fallback classification: general');
         return 'general';
     }
-};
-
-const generatePrompt = async (email, question, PPId, TPIds, user, type, messageClass) => {
+}; const generatePrompt = async (email, question, PPId, TPIds, user, type, messageClass) => {
     let systemPrompt = '';
     let userPrompt = '';
     let finalMessageClass = messageClass;
@@ -141,23 +180,19 @@ const generatePrompt = async (email, question, PPId, TPIds, user, type, messageC
 
     try {
         if (type === 'Rewrite & Correct Mode') {
-            console.log('Processing Rewrite & Correct Mode');
-            
+
             const greenPromptPath = './prompt/green.txt';
             if (!fs.existsSync(greenPromptPath)) {
                 throw new Error(`Green prompt file not found: ${greenPromptPath}`);
             }
-            
+
             systemPrompt = fs.readFileSync(greenPromptPath, 'utf-8');
             userPrompt = question;
-            console.log('Rewrite & Correct Mode setup completed');
-            
+
         } else if (type === 'Contextual Expansion Mode' || type === 'Full Prompt Generator Mode') {
-            console.log('Processing Contextual Expansion Mode');
-            
+
             // Handle auto classification
             if (messageClass === 'auto') {
-                console.log('Auto classification requested');
                 try {
                     finalMessageClass = await classification(question);
                     console.log('Auto classification completed:', finalMessageClass);
@@ -167,50 +202,8 @@ const generatePrompt = async (email, question, PPId, TPIds, user, type, messageC
                 }
             }
 
-            // Get task profile text
-            let taskProfileText = "";
-            if (TPIds) {
-                console.log('Processing task profiles:', TPIds);
-                const tpIdArray = Array.isArray(TPIds) ? TPIds : [TPIds];
-                
-                for (const TPId of tpIdArray) {
-                    if (TPId) {
-                        try {
-                            console.log(`Fetching task profile: ${TPId}`);
-                            const taskProfile = await getTaskProfileById(email, TPId);
-                            if (taskProfile) {
-                                taskProfileText += `${taskProfile.taskProfileName}: ${taskProfile.content}\n`;
-                                console.log(`Added task profile: ${taskProfile.taskProfileName}`);
-                            } else {
-                                console.warn(`Task profile ${TPId} returned null/undefined`);
-                            }
-                        } catch (err) {
-                            console.error(`Failed to retrieve task profile ${TPId}:`, err.message);
-                        }
-                    }
-                }
-            } else {
-                console.log('No task profile IDs provided');
-            }
-
-            // Get personal profile text
-            let personalProfileText = "";
-            if (PPId) {
-                console.log('Processing personal profile:', PPId);
-                try {
-                    const result = await getPersonalProfileById(email, PPId);
-                    if (result) {
-                        personalProfileText = result;
-                        console.log('Personal profile retrieved successfully');
-                    } else {
-                        console.warn('Personal profile returned null/undefined');
-                    }
-                } catch (err) {
-                    console.error(`Failed to retrieve personal profile ${PPId}:`, err.message);
-                }
-            } else {
-                console.log('No personal profile ID provided');
-            }
+            // **Use getUserAndTaskProfileTexts here**
+            const { personalProfileText, taskProfileText } = await getUserAndTaskProfileTexts(email, PPId, TPIds);
 
             console.log('Final messageClass for prompt building:', finalMessageClass);
 
@@ -224,14 +217,13 @@ const generatePrompt = async (email, question, PPId, TPIds, user, type, messageC
                 if (!fs.existsSync(generalRulePath)) {
                     throw new Error(`General rule file not found: ${generalRulePath}`);
                 }
-                
+
                 systemPrompt = fs.readFileSync(generalRulePath, 'utf-8');
-                console.log('Loaded general rule prompt');
-                
+
                 if (finalMessageClass !== "general") {
                     const classPromptPath = `./prompt/blue/${finalMessageClass}.txt`;
                     console.log(`Looking for class-specific prompt: ${classPromptPath}`);
-                    
+
                     if (fs.existsSync(classPromptPath)) {
                         const classPrompt = fs.readFileSync(classPromptPath, 'utf-8');
                         systemPrompt += '\n\n' + classPrompt;
@@ -255,16 +247,12 @@ Task Context Profile: ${taskProfileText || 'N/A'}
 
 Question: ${question}`;
 
-            console.log('User prompt generated successfully');
-            console.log('User prompt preview:', userPrompt.substring(0, 200) + '...');
-            
+
         } else if (type === "Full Prompt Generator Mode") {
-            console.log('Processing Full Prompt Generator Mode');
             // TODO: Implement full prompt generator logic
             systemPrompt = "You are a helpful AI assistant specialized in generating comprehensive prompts.";
             userPrompt = `Please generate a comprehensive prompt for: ${question}`;
-            console.log('Full Prompt Generator Mode setup completed (basic implementation)');
-            
+
         } else {
             console.warn(`Unknown type: ${type}, using default prompts`);
             systemPrompt = "You are a helpful AI assistant.";
@@ -274,7 +262,7 @@ Question: ${question}`;
 
         console.log('=== Sending to Groq ===');
         console.log(`System prompt length: ${systemPrompt}`);
-        console.log(`User prompt length: ${userPrompt.length}`);
+        console.log(`User prompt length: ${userPrompt}`);
 
         // Send to Groq
         const prompt = await sendMessagetoGroq(userPrompt, systemPrompt, false);
@@ -282,9 +270,6 @@ Question: ${question}`;
         if (!prompt || prompt.trim().length === 0) {
             throw new Error('Groq returned empty or null response');
         }
-
-        console.log('=== Saving to Database ===');
-        console.log(`Generated prompt length: ${prompt.length}`);
 
         // Prepare TPIds for database
         const dbTPIds = Array.isArray(TPIds) ? TPIds : (TPIds ? [TPIds] : []);
@@ -304,35 +289,58 @@ Question: ${question}`;
         });
 
         const savedMessage = await newMessage.save();
-        
-        console.log('=== Generation Completed Successfully ===');
-        console.log(`Message ID: ${savedMessage.MId}`);
-        console.log(`Final classification: ${savedMessage.classification}`);
-        console.log(`Prompt preview: ${savedMessage.prompt.substring(0, 100)}...`);
-        
+
         return savedMessage;
 
     } catch (error) {
         console.error('Error message  generate prompt:', error.message);
         console.error('Stack trace:', error.stack);
-        
+
         // Re-throw with more context
         throw new Error(`Prompt generation failed: ${error.message}`);
     }
 };
 
+const generatePromptSuggestion = async (email, question, PPId, TPIds, user, type, messageClass) => {
+    const systemPrompt = fs.readFileSync('./prompt/contextSuggestion.txt', 'utf-8');
+
+    const { personalProfileText, taskProfileText } = await getUserAndTaskProfileTexts(email, PPId, TPIds);
+
+    const userPrompt = `User Profile: ${personalProfileText || 'N/A'}
+
+Task Context Profile: ${taskProfileText || 'N/A'}
+
+Question: ${question}`;
+
+    const output = await sendMessagetoGroq(userPrompt, systemPrompt, false);
+//     const output = `called suggestion score: "0.2"
+// context suggestion:
+//  - not working
+//  - not working`
+    // console.log('called suggestion', output)
+    // Parse score
+    const scoreMatch = output.match(/score:"([0-9]*\.?[0-9]+)"/);
+    const score = scoreMatch && !isNaN(parseFloat(scoreMatch[1]))
+        ? parseFloat(scoreMatch[1])
+        : 0;
+    // Parse suggestions
+    const suggestionsMatch = output.match(/context suggestion:\n((?:\s*-\s.*\n?)*)/);
+    const suggestions = suggestionsMatch ? suggestionsMatch[1].trim() : "-";
+
+    return { score, suggestions };
+};
 // Utility function to check if all required prompt files exist
 const checkPromptFiles = () => {
     console.log('=== Checking Prompt Files ===');
-    
+
     const files = [
         './prompt/green.txt',
         './prompt/blue/general_rule.txt'
     ];
-    
+
     const classLabels = [
         "research_insight",
-        "strategy_planning", 
+        "strategy_planning",
         "goal_breakdown",
         "creative_idea_generation",
         "judgment_decision",
@@ -341,7 +349,7 @@ const checkPromptFiles = () => {
         "paraphrase",
         "candidate_screening"
     ];
-    
+
     // Add class-specific files
     classLabels.forEach(label => {
         files.push(`./prompt/blue/${label}.txt`);
@@ -357,5 +365,6 @@ export default {
     generatePrompt,
     classification,
     sendMessagetoGroq,
-    checkPromptFiles
+    checkPromptFiles,
+    generatePromptSuggestion
 };
