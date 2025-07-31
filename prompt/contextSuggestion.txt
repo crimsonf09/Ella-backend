@@ -10,7 +10,7 @@ Your task is to:
 2. Suggest missing or weak context based on the profiles to help the user improve their question or response.
 
 Always format your output strictly like this:
-
+Always return the same language as question.
 Only use the exact format shown above — no explanation, no extra text.
 
 ---
